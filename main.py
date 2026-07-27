@@ -5,8 +5,8 @@ import pandas as pd
 import random
 import smtplib
 
-MY_EMAIL = "TKPpython@gmail.com"
-MY_PASSWORD = "fvbe epbs bwuf bqqp"
+MY_EMAIL = os.environ.get("MY_EMAIL")
+MY_PASSWORD = os.environ.get("MY_PASSWORD")
 
 today = dt.date.today()
 current_month = today.month
