@@ -1,44 +1,61 @@
+import requests
+from datetime import datetime
+from requests.auth import HTTPBasicAuth
 import os
-import datetime as dt
-from pathlib import Path
-import pandas as pd
-import random
-import smtplib
 
-MY_EMAIL = os.environ.get("MY_EMAIL")
-MY_PASSWORD = os.environ.get("MY_PASSWORD")
+GENDER = "male"
+WEIGHT_KG = 81.6466
+HEIGHT_CM = 180.34
+AGE = 64
+sheety_username = os.getenv("SHEETY_USERNAME")
+sheety_password = os.getenv("SHEETY_PASSWORD")
+SHEETY_PROJECT_NAME = "myWorkouts"
+SHEETY_SHEET_NAME = "workouts"
+sheety_authentication = 'Basic ' + str(os.getenv("SHEETY_AUTHENTICATION"))
 
-today = dt.date.today()
-current_month = today.month
-current_day = today.day
-receiver_email = ""
+app_id = os.getenv("APP_ID")
+api_key = os.getenv("API_KEY")
 
-def send_email(message):
-   with smtplib.SMTP('smtp.gmail.com') as connection:
-        connection.starttls()   #secure connection
-        connection.login(user=MY_EMAIL, password=MY_PASSWORD)
-        connection.sendmail(from_addr=MY_EMAIL,
-                            to_addrs= receiver_email,
-                            msg=f"Subject:Happy Birthday!\n\n{message}"
-        )
+exercise_endpoint = "https://app.100daysofpython.dev/v1/nutrition/natural/exercise"
+sheety_endpoint = f"https://api.sheety.co/{sheety_username}/{SHEETY_PROJECT_NAME}/{SHEETY_SHEET_NAME}"
 
-def construct_email():
-    global receiver_email
-    receiver_name = entry["name"]
-    receiver_email = entry["email"]
-    birth_month = entry["month"]
-    birth_day = entry["day"]
-    if birth_month == current_month and birth_day == current_day:
-        letter_template_name = ("./letter_templates/letter_" +
-                                str(random.randint(1,3)) + ".txt")
-        with open(letter_template_name, "r") as letter_template:
-            generic_letter = letter_template.read()
-        final_letter = generic_letter.replace("[NAME]", receiver_name)
-        send_email(final_letter)
+exercise_text = input("Tell me which exercises you did: ")
 
-file_path = Path("./birthdays.csv")
-data = pd.read_csv(file_path)
-birthday_list = data.to_dict(orient="records")
+headers = {
+    "x-app-id": os.getenv("APP_ID"),
+    "x-app-key": os.getenv("APP_KEY"),
+}
 
-for entry in birthday_list:
-   construct_email()
+basic = HTTPBasicAuth(sheety_username, sheety_password)
+requests.get('https://httpbin.org/basic-auth/user/pass', auth=basic)
+
+parameters = {
+    "query": exercise_text,
+    "gender": GENDER,
+    "weight_kg": WEIGHT_KG,
+    "height_cm": HEIGHT_CM,
+    "age": AGE
+}
+
+response = requests.post(exercise_endpoint, json=parameters, headers=headers)
+result = response.json()
+
+today_date = datetime.now().strftime("%d/%m/%Y")
+now_time = datetime.now().strftime("%X")
+
+sheety_headers = {
+    "Authorization": sheety_authentication
+}
+
+for exercise in result["exercises"]:
+    sheet_inputs = {
+        "workout": {
+            "date": today_date,
+            "time": now_time,
+            "exercise": exercise["name"].title(),
+            "duration": exercise["duration_min"],
+            "calories": exercise["nf_calories"]
+        }
+    }
+    sheet_response = requests.post(sheety_endpoint, json=sheet_inputs, headers=sheety_headers)
+
