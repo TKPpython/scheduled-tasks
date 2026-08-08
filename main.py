@@ -1,6 +1,6 @@
 import requests
 from datetime import datetime
-from requests.auth import HTTPBasicAuth
+# from requests.auth import HTTPBasicAuth
 import os
 
 GENDER = "male"
