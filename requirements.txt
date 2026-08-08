@@ -1,4 +1,3 @@
 requests
 datetime
-HTTPBasicAuth from requests.auth
 os
